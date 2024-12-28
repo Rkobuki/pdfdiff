@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+
+# pdfdiff - Visualize and quantify differences between two PDF files.
+# Copyright (C) 2024  Koutaro Mukai
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -euo pipefail
+export LC_ALL=C
+
+convert_pdf_to_png() {
+    local pdf="$1"
+    local dpi="$2"
+    local outdir="$3"
+    mkdir -p "$outdir"
+    gs \
+        -dBATCH \
+        -dNOPAUSE \
+        -dSAFER \
+        -sDEVICE=pngalpha \
+        -r"$dpi" \
+        -sOutputFile="${outdir}/%03d.png" \
+        "$pdf"
+}
+
+create_diff() {
+    local in_a="$1"
+    local in_b="$2"
+    local in_mask="$3"
+    local output="$4"
+    local color_addition="$5"
+    local color_deletion="$6"
+    local color_modification="$7"
+    local count
+    count=$(
+        magick \
+            "$in_a" -alpha extract -threshold 0 -strip -write mpr:a_mask +delete \
+            "$in_b" -alpha extract -threshold 0 -strip -write mpr:b_mask +delete \
+            \
+            mpr:b_mask mpr:a_mask -compose MinusSrc -composite \
+            -colorspace sRGB -transparent black -fill "$color_addition" -opaque white \
+            "$in_mask" -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:addition +delete \
+            \
+            mpr:a_mask mpr:b_mask -compose MinusSrc -composite \
+            -colorspace sRGB -transparent black -fill "$color_deletion" -opaque white \
+            "$in_mask" -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:deletion +delete \
+            \
+            mpr:a_mask mpr:b_mask -evaluate-sequence And -write mpr:a_and_b +delete \
+            "$in_a" mpr:a_and_b -compose CopyOpacity -composite -strip -write mpr:a_temp +delete \
+            "$in_b" mpr:a_and_b -compose CopyOpacity -composite -strip -write mpr:b_temp +delete \
+            mpr:a_temp mpr:b_temp -compose Difference -composite -threshold 0 -alpha extract \
+            -colorspace sRGB -transparent black -fill "$color_modification" -opaque white \
+            "$in_mask" -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:modification +delete \
+            \
+            "$in_a" -alpha set -channel A -evaluate multiply 0.2 +channel -write mpr:in_a +delete \
+            "$in_b" -alpha set -channel A -evaluate multiply 0.2 +channel -write mpr:in_b +delete \
+            mpr:in_a mpr:in_b -compose Over -composite mpr:addition -composite mpr:deletion -composite mpr:modification -composite -write "$output" +delete \
+            \
+            mpr:addition -alpha extract -format "%[fx:mean*w*h]," -write info: +delete \
+            mpr:deletion -alpha extract -format "%[fx:mean*w*h]," -write info: +delete \
+            mpr:modification -alpha extract -format "%[fx:mean*w*h]" info:
+    )
+    echo "$count"
+}
+
+main() {
+    local a="${A:-}"
+    local b="${B:-}"
+    local outdir="${OUTDIR:-}"
+    local mask="${MASK:-}"
+    local dpi="${DPI:-150}"
+    local color_addition="${ADDITION:-#4cae4f}"
+    local color_deletion="${DELETION:-#ff5724}"
+    local color_modification="${MODIFICATION:-#ffc105}"
+
+    if [[ -z "$a" || -z "$b" || -z "$outdir" ]]; then
+        echo "Usage: A=a.pdf B=b.pdf OUTDIR=out [MASK=mask.png] [DPI=150] pdfdiff" >&2
+        exit 1
+    fi
+
+    mkdir -p "$outdir"
+    mkdir -p "$outdir/a"
+    mkdir -p "$outdir/b"
+
+    convert_pdf_to_png "$a" "$dpi" "$outdir/a" >/dev/null
+    convert_pdf_to_png "$b" "$dpi" "$outdir/b" >/dev/null
+
+    local count_a count_b
+    count_a=$(find "$outdir/a" -type f | wc -l)
+    count_b=$(find "$outdir/b" -type f | wc -l)
+    local max_count=$((count_a > count_b ? count_a : count_b))
+
+    for i in $(seq -f "%03g" 1 "$max_count"); do
+        local page_a="$outdir/a/$i.png"
+        local page_b="$outdir/b/$i.png"
+        local output="$outdir/$i.png"
+
+        if [[ ! -f "$page_a" && -f "$page_b" ]]; then
+            magick "$page_b" -alpha transparent -strip "$page_a"
+        elif [[ -f "$page_a" && ! -f "$page_b" ]]; then
+            magick "$page_a" -alpha transparent -strip "$page_b"
+        fi
+
+        if [[ -z "$mask" ]]; then
+            mask=$(mktemp --suffix=.png)
+            trap 'rm -f "$mask"' EXIT
+            magick "$page_a" -alpha off -fill white -colorize 100% -strip "$mask"
+        fi
+
+        local count
+        count=$(create_diff "$page_a" "$page_b" "$mask" "$output" "$color_addition" "$color_deletion" "$color_modification")
+        IFS=',' read -r count_addition count_deletion count_modification <<<"$count"
+        echo "Page $i, Addition: $count_addition, Deletion, $count_deletion, Modification: $count_modification"
+    done
+}
+
+main
