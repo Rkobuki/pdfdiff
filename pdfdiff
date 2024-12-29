@@ -19,66 +19,11 @@
 set -euo pipefail
 export LC_ALL=C
 
-convert_pdf_to_png() {
-    local pdf="$1"
-    local dpi="$2"
-    local outdir="$3"
-    mkdir -p "$outdir"
-    gs \
-        -dBATCH \
-        -dNOPAUSE \
-        -dSAFER \
-        -sDEVICE=pngalpha \
-        -r"$dpi" \
-        -sOutputFile="${outdir}/%03d.png" \
-        "$pdf"
-}
-
-create_diff() {
-    local in_a="$1"
-    local in_b="$2"
-    local in_mask="$3"
-    local output="$4"
-    local color_addition="$5"
-    local color_deletion="$6"
-    local color_modification="$7"
-    local count
-    count=$(
-        magick \
-            "$in_a" -alpha extract -threshold 0 -strip -write mpr:a_mask +delete \
-            "$in_b" -alpha extract -threshold 0 -strip -write mpr:b_mask +delete \
-            \
-            mpr:b_mask mpr:a_mask -compose MinusSrc -composite \
-            -colorspace sRGB -transparent black -fill "$color_addition" -opaque white \
-            "$in_mask" -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:addition +delete \
-            \
-            mpr:a_mask mpr:b_mask -compose MinusSrc -composite \
-            -colorspace sRGB -transparent black -fill "$color_deletion" -opaque white \
-            "$in_mask" -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:deletion +delete \
-            \
-            mpr:a_mask mpr:b_mask -evaluate-sequence And -write mpr:a_and_b +delete \
-            "$in_a" mpr:a_and_b -compose CopyOpacity -composite -strip -write mpr:a_temp +delete \
-            "$in_b" mpr:a_and_b -compose CopyOpacity -composite -strip -write mpr:b_temp +delete \
-            mpr:a_temp mpr:b_temp -compose Difference -composite -threshold 0 -alpha extract \
-            -colorspace sRGB -transparent black -fill "$color_modification" -opaque white \
-            "$in_mask" -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:modification +delete \
-            \
-            "$in_a" -alpha set -channel A -evaluate multiply 0.2 +channel -write mpr:in_a +delete \
-            "$in_b" -alpha set -channel A -evaluate multiply 0.2 +channel -write mpr:in_b +delete \
-            mpr:in_a mpr:in_b -compose Over -composite mpr:addition -composite mpr:deletion -composite mpr:modification -composite -write "$output" +delete \
-            \
-            mpr:addition -alpha extract -format "%[fx:mean*w*h]," -write info: +delete \
-            mpr:deletion -alpha extract -format "%[fx:mean*w*h]," -write info: +delete \
-            mpr:modification -alpha extract -format "%[fx:mean*w*h]" info:
-    )
-    echo "$count"
-}
-
 main() {
     local a="${A:-}"
     local b="${B:-}"
     local outdir="${OUTDIR:-}"
-    local mask="${MASK:-}"
+    mask="${MASK:-}"
     local dpi="${DPI:-150}"
     local color_addition="${ADDITION:-#4cae4f}"
     local color_deletion="${DELETION:-#ff5724}"
@@ -89,17 +34,24 @@ main() {
         exit 1
     fi
 
-    mkdir -p "$outdir"
-    mkdir -p "$outdir/a"
-    mkdir -p "$outdir/b"
+    mkdir -p "$outdir/"{a,b}
 
-    convert_pdf_to_png "$a" "$dpi" "$outdir/a" >/dev/null
-    convert_pdf_to_png "$b" "$dpi" "$outdir/b" >/dev/null
+    make all --jobs 2 --file - <<EOF
+.PHONY: all a b
+all: a b
+a:
+	@gs -dBATCH -dNOPAUSE -dSAFER -sDEVICE=pngalpha -r${dpi} -sOutputFile="${outdir}/a/%03d.png" "${a}" >/dev/null
+b:
+	@gs -dBATCH -dNOPAUSE -dSAFER -sDEVICE=pngalpha -r${dpi} -sOutputFile="${outdir}/b/%03d.png" "${b}" >/dev/null
+EOF
 
     local count_a count_b
     count_a=$(find "$outdir/a" -type f | wc -l)
     count_b=$(find "$outdir/b" -type f | wc -l)
     local max_count=$((count_a > count_b ? count_a : count_b))
+
+    local files=()
+    local makefile=""
 
     for i in $(seq -f "%03g" 1 "$max_count"); do
         local page_a="$outdir/a/$i.png"
@@ -118,11 +70,47 @@ main() {
             magick "$page_a" -alpha off -fill white -colorize 100% -strip "$mask"
         fi
 
-        local count
-        count=$(create_diff "$page_a" "$page_b" "$mask" "$output" "$color_addition" "$color_deletion" "$color_modification")
-        IFS=',' read -r count_addition count_deletion count_modification <<<"$count"
-        echo "Page $i, Addition: $count_addition, Deletion, $count_deletion, Modification: $count_modification"
+        files+=("$output")
+        makefile+=$(
+            cat <<EOF
+$output: $page_a $page_b
+	@magick \
+        \$< -strip -write mpr:in_a +delete \
+        \$(word \$(words \$^), \$^) -strip -write mpr:in_b +delete \
+        "${mask}" -strip -write mpr:in_mask +delete \
+        \
+        mpr:in_a -alpha extract -threshold 0 -write mpr:a_mask +delete \
+        mpr:in_b -alpha extract -threshold 0 -write mpr:b_mask +delete \
+        \
+        mpr:b_mask mpr:a_mask -compose MinusSrc -composite \
+        -colorspace sRGB -transparent black -fill "${color_addition}" -opaque white \
+        mpr:in_mask -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:addition +delete \
+        \
+        mpr:a_mask mpr:b_mask -compose MinusSrc -composite \
+        -colorspace sRGB -transparent black -fill "${color_deletion}" -opaque white \
+        mpr:in_mask -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:deletion +delete \
+        \
+        mpr:a_mask mpr:b_mask -evaluate-sequence And -write mpr:a_and_b +delete \
+        mpr:in_a mpr:a_and_b -compose CopyOpacity -composite -write mpr:a_temp +delete \
+        mpr:in_b mpr:a_and_b -compose CopyOpacity -composite -write mpr:b_temp +delete \
+        mpr:a_temp mpr:b_temp -compose Difference -composite -threshold 0 -alpha extract \
+        -colorspace sRGB -transparent black -fill "${color_modification}" -opaque white \
+        mpr:in_mask -alpha Off -compose CopyOpacity -composite -transparent black -colorspace sRGB -write mpr:modification +delete \
+        \
+        mpr:in_a -alpha set -channel A -evaluate multiply 0.2 +channel -write mpr:a_alpha +delete \
+        mpr:in_b -alpha set -channel A -evaluate multiply 0.2 +channel -write mpr:b_alpha +delete \
+        mpr:a_alpha mpr:b_alpha -compose Over -composite mpr:addition -composite mpr:deletion -composite mpr:modification -composite -write \$@ +delete \
+        \
+        mpr:addition -alpha extract -format "%[fx:mean*w*h]," -write info: +delete \
+        mpr:deletion -alpha extract -format "%[fx:mean*w*h]," -write info: +delete \
+        mpr:modification -alpha extract -format "%[fx:mean*w*h]" info: >\$(basename \$@).log
+EOF
+        )
+        makefile+="\n"
     done
+
+    makefile=$(echo -e ".PHONY: all ${files[@]}\nall: ${files[@]}\n$makefile")
+    echo -e "$makefile" | make all --jobs $(nproc) --file -
 }
 
 main
