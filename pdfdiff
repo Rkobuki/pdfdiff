@@ -111,6 +111,13 @@ EOF
 
     makefile=$(echo -e ".PHONY: all ${files[@]}\nall: ${files[@]}\n$makefile")
     echo -e "$makefile" | make all --jobs $(nproc) --file -
+
+    for file in $(find "$outdir" -name "*.log" -type f); do
+        page_number=$(basename "$file" .log)
+        IFS=',' read -r addition deletion modification <"$file" || true
+        echo "Page ${page_number}, Addition: ${addition}, Deletion: ${deletion}, Modification: ${modification}"
+        rm -f "$file"
+    done
 }
 
 main
