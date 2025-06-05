@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@techstark/opencv-js": "^4.10.0-release.1",
+    "ix": "^7.0.0",
     "jimp": "^1.6.0",
     "mupdf": "^1.26.2"
   }

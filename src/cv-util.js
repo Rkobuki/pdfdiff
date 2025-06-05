@@ -54,7 +54,6 @@ export function matNormalizeTo8U4C(src, bgr = true) {
 
 /**
  * @param {Mat8U4C} mat
- * @returns {Promise<Uint8Array>}
  */
 export async function matToPNGBuffer(mat) {
   return await new jimp.Jimp({
