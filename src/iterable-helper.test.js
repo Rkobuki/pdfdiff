@@ -3,7 +3,7 @@
 import assert from "assert";
 import test from "node:test";
 
-import { zipLongest } from "./iterable-helper.js";
+import { productSync, zipLongest } from "./iterable-helper.js";
 
 test("zipLongest", async () => {
   assert.deepStrictEqual(
@@ -25,5 +25,33 @@ test("zipLongest", async () => {
       [1, "b"],
       [2, null],
     ],
+  );
+});
+
+test("productSync", () => {
+  assert.deepStrictEqual(
+    JSON.stringify(
+      Array.from(
+        productSync(
+          (function* () {
+            yield 0;
+            yield 1;
+            yield 2;
+          })(),
+          (function* () {
+            yield "a";
+            yield "b";
+          })(),
+        ),
+      ),
+    ),
+    JSON.stringify([
+      [0, "a"],
+      [0, "b"],
+      [1, "a"],
+      [1, "b"],
+      [2, "a"],
+      [2, "b"],
+    ]),
   );
 });
