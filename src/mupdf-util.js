@@ -34,23 +34,27 @@ export async function pageToImage(page, dpi, alpha) {
 }
 
 /**
- * @param {[JimpInstance, JimpInstance] | [JimpInstance, null] | [null, JimpInstance]} pair
+ * @overload
+ * @param {[JimpInstance, JimpInstance] | [JimpInstance, null] | [null, JimpInstance]} images
+ * @returns {[JimpInstance, JimpInstance]}
+ *
+ * @overload
+ * @param {[JimpInstance, JimpInstance, JimpInstance] | [JimpInstance, JimpInstance, null] | [JimpInstance, null, JimpInstance] | [JimpInstance, null, null] | [null, JimpInstance, JimpInstance] | [null, JimpInstance, null] | [null, null, JimpInstance]} images
+ * @returns {[JimpInstance, JimpInstance, JimpInstance]}
+ *
+ * @param {(JimpInstance | null)[]} images
+ * @returns {JimpInstance[]}
  */
-export function fillWithEmpty(pair) {
-  return pair[0] !== null && pair[1] !== null
-    ? pair
-    : (() => {
-        const [index, image] = pair[0] === null ? [1, pair[1]] : [0, pair[0]];
-        /** @satisfies {JimpInstance} */
-        const empty = new jimp.Jimp({
-          width: image.width,
-          height: image.height,
+export function fillWithEmpty(images) {
+  return images.map((img) =>
+    img !== null
+      ? img
+      : new jimp.Jimp({
+          width: 1,
+          height: 1,
           color: jimp.rgbaToInt(0, 0, 0, 0),
-        });
-        return /** @type {[JimpInstance, JimpInstance]} */ (
-          index === 0 ? [image, empty] : [empty, image]
-        );
-      })();
+        }),
+  );
 }
 
 /**
@@ -85,20 +89,30 @@ function alignImage(img, targetWidth, targetHeight, align) {
 }
 
 /**
- * @param {[JimpInstance, JimpInstance]} param0
+ * @overload
+ * @param {[JimpInstance, JimpInstance]} images
  * @param {AlignStrategy} align
  * @returns {[JimpInstance, JimpInstance]}
+ *
+ * @overload
+ * @param {[JimpInstance, JimpInstance, JimpInstance]} images
+ * @param {AlignStrategy} align
+ * @returns {[JimpInstance, JimpInstance, JimpInstance]}
+ *
+ * @param {JimpInstance[]} images
+ * @param {AlignStrategy} align
+ * @returns {JimpInstance[]}
  */
-export function alignSize([img1, img2], align) {
-  const { width: width1, height: height1 } = img1;
-  const { width: width2, height: height2 } = img2;
-  if (width1 === width2 && height1 === height2) {
-    return [img1, img2];
+export function alignSize(images, align) {
+  if (images.length === 0) {
+    return [];
   }
-  const largerHeight = Math.max(height1, height2);
-  const largerWidth = Math.max(width1, width2);
-  const ret1 = alignImage(img1, largerWidth, largerHeight, align);
-  const ret2 = alignImage(img2, largerWidth, largerHeight, align);
+  const largerWidth = Math.max(...images.map((img) => img.width));
+  const largerHeight = Math.max(...images.map((img) => img.height));
   // @ts-expect-error
-  return [ret1, ret2];
+  return images.map((img) =>
+    img.width === largerWidth && img.height === largerHeight
+      ? img
+      : alignImage(img, largerWidth, largerHeight, align),
+  );
 }
