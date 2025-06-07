@@ -22,6 +22,7 @@
   "homepage": "https://github.com/u1f992/pdfdiff#readme",
   "type": "module",
   "devDependencies": {
+    "nodehog": "^0.1.2",
     "prettier": "^3.5.3"
   },
   "dependencies": {
