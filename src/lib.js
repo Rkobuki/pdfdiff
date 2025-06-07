@@ -1,0 +1,103 @@
+// @ts-check
+
+import * as jimp from "jimp";
+/**
+ * @typedef {jimp.JimpInstance} JimpInstance
+ */
+/**
+ * @typedef {import("./index.js").Pallet} Pallet
+ */
+import { range as rangeSync, reduce as reduceSync } from "ix/iterable";
+
+import { productSync } from "./iterable-helper.js";
+
+/**
+ * @param {JimpInstance} a
+ * @param {JimpInstance} b
+ * @param {JimpInstance} mask
+ * @param {Pallet} pallet
+ */
+export function drawDifference(a, b, mask, pallet) {
+  if (
+    a.width !== b.width ||
+    b.width !== mask.width ||
+    a.height !== b.height ||
+    b.height !== mask.height
+  ) {
+    throw new Error("Assertion failed: pages are different sizes");
+  }
+
+  const addColor = jimp.rgbaToInt(
+    pallet.addition.red,
+    pallet.addition.green,
+    pallet.addition.blue,
+    255,
+  );
+  const delColor = jimp.rgbaToInt(
+    pallet.deletion.red,
+    pallet.deletion.green,
+    pallet.deletion.blue,
+    255,
+  );
+  const modColor = jimp.rgbaToInt(
+    pallet.modification.red,
+    pallet.modification.green,
+    pallet.modification.blue,
+    255,
+  );
+
+  return reduceSync(
+    productSync(rangeSync(0, a.width), rangeSync(0, a.height)),
+    {
+      callback: ({ addition, deletion, modification, diff }, [x, y]) => {
+        const intA = a.getPixelColor(x, y);
+        const intB = b.getPixelColor(x, y);
+        const colorA = jimp.intToRGBA(intA);
+        const colorB = jimp.intToRGBA(intB);
+        const masked = jimp.intToRGBA(mask.getPixelColor(x, y)).a !== 0;
+        if (masked || intA === intB || (colorA.a === 0 && colorB.a === 0)) {
+          return { addition, deletion, modification, diff };
+        }
+        const [target, color] =
+          colorA.a === 0 && colorB.a !== 0
+            ? [addition, addColor]
+            : colorA.a !== 0 && colorB.a === 0
+              ? [deletion, delColor]
+              : [modification, modColor];
+        target.push([x, y]);
+        diff.setPixelColor(color, x, y);
+        return { addition, deletion, modification, diff };
+      },
+      seed: {
+        addition: /** @type {[number, number][]} */ ([]),
+        deletion: /** @type {[number, number][]} */ ([]),
+        modification: /** @type {[number, number][]} */ ([]),
+        diff: new jimp.Jimp({
+          width: a.width,
+          height: a.height,
+          color: jimp.rgbaToInt(0, 0, 0, 0),
+        }),
+      },
+    },
+  );
+}
+
+/**
+ * @param {number} canvasWidth
+ * @param {number} canvasHeight
+ * @param {[JimpInstance, number][]} layers
+ */
+export function composeLayers(canvasWidth, canvasHeight, layers) {
+  return layers.reduce(
+    (acc, [image, opacity]) =>
+      acc.composite(image, 0, 0, {
+        mode: jimp.BlendMode.SRC_OVER,
+        opacitySource: opacity,
+      }),
+    new jimp.Jimp({
+      width: canvasWidth,
+      height: canvasHeight,
+      color: jimp.rgbaToInt(0, 0, 0, 0),
+    }),
+  );
+}
