@@ -15,7 +15,10 @@ import { alignStrategyValues } from "./mupdf-util.js";
 /**
  * @typedef {import("./mupdf-util.js").AlignStrategy} AlignStrategy
  */
-import { parseHex, formatHex } from "./util.js";
+import { parseHex, formatHex } from "./color-util.js";
+/**
+ * @typedef {import("./color-util.js").RGBAColor} RGBAColor
+ */
 
 export { enumerate, alignStrategyValues, parseHex, formatHex };
 
@@ -23,14 +26,15 @@ export const DEFAULT_DPI = 150;
 export const DEFAULT_ALPHA = true;
 export const DEFAULT_ALIGN = "resize";
 /**
- * @typedef {{ red: number; green: number; blue: number; }} RGBColor
- * @typedef {{ addition: Readonly<RGBColor>; deletion: Readonly<RGBColor>; modification: Readonly<RGBColor>; }} Pallet
+ * @typedef {{ addition: Readonly<RGBAColor>; deletion: Readonly<RGBAColor>; modification: Readonly<RGBAColor>; }} Pallet
  */
 /** @type {Readonly<Pallet>} */
 export const DEFAULT_PALLET = Object.freeze({
-  addition: Object.freeze({ red: 0x4c, green: 0xae, blue: 0x4f }),
-  deletion: Object.freeze({ red: 0xff, green: 0x57, blue: 0x24 }),
-  modification: Object.freeze({ red: 0xff, green: 0xc1, blue: 0x05 }),
+  addition: Object.freeze(/** @type {RGBAColor} */ ([0x4c, 0xae, 0x4f, 0xff])),
+  deletion: Object.freeze(/** @type {RGBAColor} */ ([0xff, 0x57, 0x24, 0xff])),
+  modification: Object.freeze(
+    /** @type {RGBAColor} */ ([0xff, 0xc1, 0x05, 0xff]),
+  ),
 });
 
 /**

@@ -28,22 +28,22 @@ export function drawDifference(a, b, mask, pallet) {
   }
 
   const addColor = jimp.rgbaToInt(
-    pallet.addition.red,
-    pallet.addition.green,
-    pallet.addition.blue,
-    255,
+    pallet.addition[0],
+    pallet.addition[1],
+    pallet.addition[2],
+    pallet.addition[3],
   );
   const delColor = jimp.rgbaToInt(
-    pallet.deletion.red,
-    pallet.deletion.green,
-    pallet.deletion.blue,
-    255,
+    pallet.deletion[0],
+    pallet.deletion[1],
+    pallet.deletion[2],
+    pallet.deletion[3],
   );
   const modColor = jimp.rgbaToInt(
-    pallet.modification.red,
-    pallet.modification.green,
-    pallet.modification.blue,
-    255,
+    pallet.modification[0],
+    pallet.modification[1],
+    pallet.modification[2],
+    pallet.modification[3],
   );
 
   return reduceSync(

@@ -57,9 +57,9 @@ OPTIONS:
              | "top-left" | "top-center" | "top-right"
              | "middle-left" | "middle-center" | "middle-right"
              | "bottom-left" | "bottom-center" | "bottom-right">
-    --addition <HEX>
-    --deletion <HEX>
-    --modification <HEX>
+    --addition <#HEX>
+    --deletion <#HEX>
+    --modification <#HEX>
     -h, --help
 `);
   process.exit(0);

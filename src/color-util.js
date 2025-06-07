@@ -1,7 +1,12 @@
 // @ts-check
 
 /**
+ * @typedef {[number, number, number, number]} RGBAColor
+ */
+
+/**
  * @param {string} hex
+ * @returns {RGBAColor | null}
  */
 export const parseHex = (hex) =>
   /^#([0-9a-fA-F]{6})$/.test(hex)
@@ -21,7 +26,7 @@ export const parseHex = (hex) =>
       : null;
 
 /**
- * @param {[number, number, number, number]} rgba
+ * @param {Readonly<RGBAColor>} rgba
  */
 export const formatHex = ([r, g, b, a]) =>
   "#" +
