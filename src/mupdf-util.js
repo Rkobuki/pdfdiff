@@ -56,11 +56,27 @@ export function fillWithEmpty(images) {
   );
 }
 
+/** @type {["resize", "top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"]} */
+export const alignStrategyValues = [
+  "resize",
+  "top-left",
+  "top-center",
+  "top-right",
+  "middle-left",
+  "middle-center",
+  "middle-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right",
+];
+/**
+ * @typedef {typeof alignStrategyValues[number]} AlignStrategy
+ */
+
 /**
  * @param {JimpInstance} img
  * @param {number} targetWidth
  * @param {number} targetHeight
- * @typedef {"resize" | "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right"} AlignStrategy
  * @param {AlignStrategy} align
  */
 function alignImage(img, targetWidth, targetHeight, align) {

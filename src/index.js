@@ -10,14 +10,14 @@ import * as jimp from "jimp";
 import Worker from "web-worker";
 
 import { zipLongest, enumerate } from "./iterable-helper.js";
-import {
-  alignSize,
-  pageToImage,
-  fillWithEmpty,
-  loadPages,
-} from "./mupdf-util.js";
+import { pageToImage, fillWithEmpty, loadPages } from "./mupdf-util.js";
+import { alignStrategyValues } from "./mupdf-util.js";
+/**
+ * @typedef {import("./mupdf-util.js").AlignStrategy} AlignStrategy
+ */
+import { parseHex, formatHex } from "./util.js";
 
-export { enumerate };
+export { enumerate, alignStrategyValues, parseHex, formatHex };
 
 export const DEFAULT_DPI = 150;
 export const DEFAULT_ALPHA = true;
@@ -55,9 +55,7 @@ export function visualizeDifferences(a, b, options) {
   };
   const pageToImageFn = (/** @type {mupdf.Page} */ page) =>
     pageToImage(page, dpi, alpha);
-  const alignSizeFn = (
-    /** @type {[JimpInstance, JimpInstance, JimpInstance]} */ images,
-  ) => alignSize(images, align);
+
   const pdfA = mupdf.PDFDocument.openDocument(a, "application/pdf");
   const pdfB = mupdf.PDFDocument.openDocument(b, "application/pdf");
   const pdfMask =
@@ -72,7 +70,6 @@ export function visualizeDifferences(a, b, options) {
     ),
   ).pipe(
     map(fillWithEmpty),
-    map(alignSizeFn),
     flatMap(async ([a, b, mask]) => {
       const cloneA = a.clone();
       const cloneB = b.clone();
@@ -89,7 +86,7 @@ export function visualizeDifferences(a, b, options) {
               resolve(e.data);
               worker.terminate();
             });
-            worker.postMessage({ bufA, bufB, bufMask, pallet }, [
+            worker.postMessage({ bufA, bufB, bufMask, pallet, align }, [
               bufA,
               bufB,
               bufMask,
