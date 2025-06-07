@@ -23,9 +23,9 @@ const {
     alpha,
     mask: mask_,
     align,
-    addition: addition_,
-    deletion: deletion_,
-    modification: modification_,
+    "addition-color": additionColor,
+    "deletion-color": deletionColor,
+    "modification-color": modificationColor,
     help,
   },
 } = util.parseArgs({
@@ -35,9 +35,15 @@ const {
     alpha: { type: "boolean" },
     mask: { type: "string" },
     align: { type: "string", default: DEFAULT_ALIGN },
-    addition: { type: "string", default: formatHex(DEFAULT_PALLET.addition) },
-    deletion: { type: "string", default: formatHex(DEFAULT_PALLET.deletion) },
-    modification: {
+    "addition-color": {
+      type: "string",
+      default: formatHex(DEFAULT_PALLET.addition),
+    },
+    "deletion-color": {
+      type: "string",
+      default: formatHex(DEFAULT_PALLET.deletion),
+    },
+    "modification-color": {
       type: "string",
       default: formatHex(DEFAULT_PALLET.modification),
     },
@@ -57,9 +63,9 @@ OPTIONS:
              | "top-left" | "top-center" | "top-right"
              | "middle-left" | "middle-center" | "middle-right"
              | "bottom-left" | "bottom-center" | "bottom-right">
-    --addition <#HEX>
-    --deletion <#HEX>
-    --modification <#HEX>
+    --addition-color <#HEX>
+    --deletion-color <#HEX>
+    --modification-color <#HEX>
     -h, --help
 `);
   process.exit(0);
@@ -84,9 +90,9 @@ const pdfMask =
 if (!alignStrategyValues.includes(align)) {
   throw new Error(`Invalid alignment strategy`);
 }
-const addition = parseHex(addition_);
-const deletion = parseHex(deletion_);
-const modification = parseHex(modification_);
+const addition = parseHex(additionColor);
+const deletion = parseHex(deletionColor);
+const modification = parseHex(modificationColor);
 if (addition === null || deletion === null || modification === null) {
   throw new Error("Invalid color format");
 }
