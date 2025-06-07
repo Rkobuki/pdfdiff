@@ -23,14 +23,13 @@ export function* loadPages(pdf) {
 export async function pageToImage(page, dpi, alpha) {
   // https://mupdfjs.readthedocs.io/en/latest/how-to-guide/migration/index.html#from-andytango-mupdf-js
   const zoom = dpi / 72;
-  const pixmap = page.toPixmap(
-    [zoom, 0, 0, zoom, 0, 0],
-    mupdf.ColorSpace.DeviceRGB,
-    alpha,
+  return await jimp.Jimp.fromBuffer(
+    new Uint8Array(
+      page
+        .toPixmap([zoom, 0, 0, zoom, 0, 0], mupdf.ColorSpace.DeviceRGB, alpha)
+        .asPNG(),
+    ).buffer,
   );
-  const dataUrl =
-    "data:image/png;base64," + btoa(String.fromCharCode(...pixmap.asPNG()));
-  return await jimp.Jimp.read(dataUrl);
 }
 
 /**
