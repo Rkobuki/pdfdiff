@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script type="module">
+      import * as pdfdiff from "./index.js";
+
+      const pdfA = new Uint8Array();
+      const pdfB = new Uint8Array();
+      const dpi = 150;
+      const alpha = true;
+      const pdfMask = new Uint8Array();
+      const align = "resize";
+
+      for await (const [
+        i,
+        { a, b, diff, addition, deletion, modification },
+      ] of pdfdiff.withIndex(
+        pdfdiff.visualizeDifferences(pdfA, pdfB, {
+          dpi,
+          alpha,
+          mask: pdfMask,
+          align,
+        }),
+        1,
+      )) {
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
