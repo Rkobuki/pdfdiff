@@ -1,33 +1,67 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <script type="module">
-      import * as pdfdiff from "./index.js";
-
-      const pdfA = new Uint8Array();
-      const pdfB = new Uint8Array();
-      const dpi = 150;
-      const alpha = true;
-      const pdfMask = new Uint8Array();
-      const align = "resize";
-
-      for await (const [
-        i,
-        { a, b, diff, addition, deletion, modification },
-      ] of pdfdiff.withIndex(
-        pdfdiff.visualizeDifferences(pdfA, pdfB, {
-          dpi,
-          alpha,
-          mask: pdfMask,
-          align,
-        }),
-        1,
-      )) {
-      }
-    </script>
+    <title>pdfdiff</title>
+    <link rel="stylesheet" href="./style.css">
+    <script type="module" src="./browser.js"></script>
   </head>
-  <body></body>
+  <body>
+    <h1>pdfdiff</h1>
+    <div class="form-container">
+      <form id="pdf-diff-form">
+        <div>
+          <label for="pdf-a">A:</label>
+          <input type="file" id="pdf-a" accept="application/pdf" required />
+        </div>
+        <div>
+          <label for="pdf-b">B:</label>
+          <input type="file" id="pdf-b" accept="application/pdf" required />
+        </div>
+        <div>
+          <label for="pdf-mask">Mask:</label>
+          <input type="file" id="pdf-mask" accept="application/pdf" />
+        </div>
+        <div>
+          <label for="dpi">DPI:</label>
+          <input type="number" id="dpi" value="150" />
+        </div>
+        <div>
+          <label for="alpha">Alpha:</label>
+          <input type="checkbox" id="alpha" checked />
+        </div>
+        <div>
+          <label for="align">Align:</label>
+          <select id="align">
+            <option value="resize">resize</option>
+            <option value="top-left">top-left</option>
+            <option value="top-center">top-center</option>
+            <option value="top-right">top-right</option>
+            <option value="middle-left">middle-left</option>
+            <option value="middle-center">middle-center</option>
+            <option value="middle-right">middle-right</option>
+            <option value="bottom-left">bottom-left</option>
+            <option value="bottom-center">bottom-center</option>
+            <option value="bottom-right">bottom-right</option>
+          </select>
+        </div>
+        <div>
+          <label for="addition-color">Addition:</label>
+          <input type="color" id="addition-color" value="#4cae4f" />
+        </div>
+        <div>
+          <label for="deletion-color">Deletion:</label>
+          <input type="color" id="deletion-color" value="#ff5724" />
+        </div>
+        <div>
+          <label for="modification-color">Modification:</label>
+          <input type="color" id="modification-color" value="#ffc105" />
+        </div>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+    <div class="error" id="error-message"></div>
+    <div class="results" id="results"></div>
+  </body>
 </html>

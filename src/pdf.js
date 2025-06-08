@@ -26,7 +26,9 @@ import * as mupdf from "mupdf";
  */
 export function* loadPages(pdf) {
   for (let i = 0; i < pdf.countPages(); i++) {
-    yield pdf.loadPage(i);
+    const page = pdf.loadPage(i);
+    yield page;
+    page.destroy();
   }
 }
 
@@ -38,11 +40,12 @@ export function* loadPages(pdf) {
 export async function pageToImage(page, dpi, alpha) {
   // https://mupdfjs.readthedocs.io/en/latest/how-to-guide/migration/index.html#from-andytango-mupdf-js
   const zoom = dpi / 72;
-  return await jimp.Jimp.fromBuffer(
-    new Uint8Array(
-      page
-        .toPixmap([zoom, 0, 0, zoom, 0, 0], mupdf.ColorSpace.DeviceRGB, alpha)
-        .asPNG(),
-    ).buffer,
+  const pixmap = page.toPixmap(
+    [zoom, 0, 0, zoom, 0, 0],
+    mupdf.ColorSpace.DeviceRGB,
+    alpha,
   );
+  const ret = await jimp.Jimp.fromBuffer(new Uint8Array(pixmap.asPNG()).buffer);
+  pixmap.destroy();
+  return ret;
 }

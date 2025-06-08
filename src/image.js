@@ -80,7 +80,7 @@ export const isValidAlignStrategy = (str) =>
  */
 function alignImage(img, targetWidth, targetHeight, align) {
   if (align === "resize") {
-    return img.clone().resize({ w: targetWidth, h: targetHeight });
+    return img.resize({ w: targetWidth, h: targetHeight });
   } else {
     const newImg = createEmptyImage(targetWidth, targetHeight);
     const x = align.includes("center")
