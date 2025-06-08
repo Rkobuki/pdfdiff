@@ -1,6 +1,23 @@
 #!/usr/bin/env node
 // @ts-check
 
+/*
+ * Copyright (C) 2025  Koutaro Mukai
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import fs from "node:fs";
 import path from "node:path";
 import util from "node:util";
@@ -24,6 +41,7 @@ const {
     "addition-color": additionColor,
     "deletion-color": deletionColor,
     "modification-color": modificationColor,
+    version,
     help,
   },
 } = util.parseArgs({
@@ -36,6 +54,7 @@ const {
     "addition-color": { type: "string" },
     "deletion-color": { type: "string" },
     "modification-color": { type: "string" },
+    version: { type: "boolean", short: "v" },
     help: { type: "boolean", short: "h" },
   },
 });
@@ -54,8 +73,22 @@ OPTIONS:
     --addition-color <#HEX>        default: ${formatHex(defaultOptions.pallet.addition)}
     --deletion-color <#HEX>        default: ${formatHex(defaultOptions.pallet.deletion)}
     --modification-color <#HEX>    default: ${formatHex(defaultOptions.pallet.modification)}
+    -v, --version
     -h, --help
 `);
+  process.exit(0);
+}
+if (version) {
+  try {
+    const versionStr = JSON.parse(
+      fs.readFileSync(new URL("../package.json", import.meta.url), {
+        encoding: "utf-8",
+      }),
+    ).version;
+    console.log(versionStr);
+  } catch {
+    console.log("unknown");
+  }
   process.exit(0);
 }
 

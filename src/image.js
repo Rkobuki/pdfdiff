@@ -1,7 +1,36 @@
 // @ts-check
 
+/*
+ * Copyright (C) 2025  Koutaro Mukai
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import * as jimp from "jimp";
 /** @typedef {jimp.JimpInstance} JimpInstance */
+
+/**
+ * @param {number} width
+ * @param {number} height
+ */
+export function createEmptyImage(width, height) {
+  return new jimp.Jimp({
+    width,
+    height,
+    color: jimp.rgbaToInt(0, 0, 0, 0),
+  });
+}
 
 /**
  * @overload
@@ -16,15 +45,7 @@ import * as jimp from "jimp";
  * @returns {JimpInstance[]}
  */
 export function fillWithEmpty(images) {
-  return images.map((img) =>
-    img !== null
-      ? img
-      : new jimp.Jimp({
-          width: 1,
-          height: 1,
-          color: jimp.rgbaToInt(0, 0, 0, 0),
-        }),
-  );
+  return images.map((img) => (img !== null ? img : createEmptyImage(1, 1)));
 }
 
 /** @type {["resize", "top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"]} */
@@ -61,11 +82,7 @@ function alignImage(img, targetWidth, targetHeight, align) {
   if (align === "resize") {
     return img.clone().resize({ w: targetWidth, h: targetHeight });
   } else {
-    const newImg = new jimp.Jimp({
-      width: targetWidth,
-      height: targetHeight,
-      color: jimp.rgbaToInt(0, 0, 0, 0),
-    });
+    const newImg = createEmptyImage(targetWidth, targetHeight);
     const x = align.includes("center")
       ? Math.floor((targetWidth - img.width) / 2)
       : align.includes("right")
@@ -122,10 +139,6 @@ export function composeLayers(canvasWidth, canvasHeight, layers) {
         mode: jimp.BlendMode.SRC_OVER,
         opacitySource: opacity,
       }),
-    new jimp.Jimp({
-      width: canvasWidth,
-      height: canvasHeight,
-      color: jimp.rgbaToInt(0, 0, 0, 0),
-    }),
+    createEmptyImage(canvasWidth, canvasHeight),
   );
 }

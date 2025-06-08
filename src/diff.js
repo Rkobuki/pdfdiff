@@ -1,10 +1,28 @@
 // @ts-check
 
+/*
+ * Copyright (C) 2025  Koutaro Mukai
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import * as jimp from "jimp";
 /** @typedef {jimp.JimpInstance} JimpInstance */
 import { range as rangeSync, reduce as reduceSync } from "ix/iterable";
 
 import { productSync } from "./iterable.js";
+import { createEmptyImage } from "./image.js";
 /** @typedef {import("./rgba-color.js").RGBAColor} RGBAColor */
 
 /** @typedef {{ addition: Readonly<RGBAColor>; deletion: Readonly<RGBAColor>; modification: Readonly<RGBAColor> }} Pallet */
@@ -70,11 +88,7 @@ export function drawDifference(a, b, mask, pallet) {
         addition: /** @type {[number, number][]} */ ([]),
         deletion: /** @type {[number, number][]} */ ([]),
         modification: /** @type {[number, number][]} */ ([]),
-        diff: new jimp.Jimp({
-          width: a.width,
-          height: a.height,
-          color: jimp.rgbaToInt(0, 0, 0, 0),
-        }),
+        diff: createEmptyImage(a.width, a.height),
       },
     },
   );
