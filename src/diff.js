@@ -1,15 +1,13 @@
 // @ts-check
 
 import * as jimp from "jimp";
-/**
- * @typedef {jimp.JimpInstance} JimpInstance
- */
-/**
- * @typedef {import("./index.js").Pallet} Pallet
- */
+/** @typedef {jimp.JimpInstance} JimpInstance */
 import { range as rangeSync, reduce as reduceSync } from "ix/iterable";
 
-import { productSync } from "./iterable-helper.js";
+import { productSync } from "./iterable.js";
+/** @typedef {import("./rgba-color.js").RGBAColor} RGBAColor */
+
+/** @typedef {{ addition: Readonly<RGBAColor>; deletion: Readonly<RGBAColor>; modification: Readonly<RGBAColor> }} Pallet */
 
 /**
  * @param {JimpInstance} a
@@ -79,25 +77,5 @@ export function drawDifference(a, b, mask, pallet) {
         }),
       },
     },
-  );
-}
-
-/**
- * @param {number} canvasWidth
- * @param {number} canvasHeight
- * @param {[JimpInstance, number][]} layers
- */
-export function composeLayers(canvasWidth, canvasHeight, layers) {
-  return layers.reduce(
-    (acc, [image, opacity]) =>
-      acc.composite(image, 0, 0, {
-        mode: jimp.BlendMode.SRC_OVER,
-        opacitySource: opacity,
-      }),
-    new jimp.Jimp({
-      width: canvasWidth,
-      height: canvasHeight,
-      color: jimp.rgbaToInt(0, 0, 0, 0),
-    }),
   );
 }

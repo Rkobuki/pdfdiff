@@ -3,12 +3,12 @@
 import assert from "assert";
 import test from "node:test";
 
-import { enumerate, productSync, zipLongest } from "./iterable-helper.js";
+import { withIndex, productSync, zipLongest } from "./iterable.js";
 
-test("enumerate", async () => {
+test("withIndex", async () => {
   assert.deepStrictEqual(
     await Array.fromAsync(
-      enumerate(
+      withIndex(
         (async function* () {
           yield "a";
           yield "b";

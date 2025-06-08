@@ -5,7 +5,7 @@
  * @param {AsyncIterable<T>} iter
  * @param {number} [start]
  */
-export async function* enumerate(iter, start = 0) {
+export async function* withIndex(iter, start = 0) {
   let index = start;
   for await (const item of iter) {
     yield /** @type {[number, T]} */ ([index, item]);

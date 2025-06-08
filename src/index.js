@@ -1,29 +1,23 @@
 // @ts-check
 
-import * as mupdf from "mupdf";
+import * as jimp from "jimp";
+/** @typedef {jimp.JimpInstance} JimpInstance */
 import { from } from "ix/asynciterable";
 import { map, flatMap } from "ix/asynciterable/operators";
-import * as jimp from "jimp";
-/**
- * @typedef {jimp.JimpInstance} JimpInstance
- */
+import * as mupdf from "mupdf";
 import Worker from "web-worker";
 
-import { zipLongest, enumerate } from "./iterable-helper.js";
-import { pageToImage, fillWithEmpty, loadPages } from "./mupdf-util.js";
-import { isValidAlignStrategy } from "./mupdf-util.js";
-/**
- * @typedef {import("./mupdf-util.js").AlignStrategy} AlignStrategy
- */
-import { parseHex, formatHex } from "./color-util.js";
-/**
- * @typedef {import("./color-util.js").RGBAColor} RGBAColor
- */
+/** @typedef {import("./diff.js").Pallet} Pallet */
+import { fillWithEmpty, isValidAlignStrategy } from "./image.js";
+/** @typedef {import("./image.js").AlignStrategy} AlignStrategy */
+import { zipLongest, withIndex } from "./iterable.js";
+import { loadPages, pageToImage } from "./pdf.js";
+import { parseHex, formatHex } from "./rgba-color.js";
+/** @typedef {import("./rgba-color.js").RGBAColor} RGBAColor */
 
-export { enumerate, isValidAlignStrategy, parseHex, formatHex };
+export { withIndex, isValidAlignStrategy, parseHex, formatHex };
 
 /**
- * @typedef {{ addition: Readonly<RGBAColor>; deletion: Readonly<RGBAColor>; modification: Readonly<RGBAColor> }} Pallet
  * @typedef {{ dpi: number; alpha: boolean; mask?: Uint8Array; align: AlignStrategy; pallet: Partial<Readonly<Pallet>> }} VisualizeDifferencesOptions
  * @satisfies {Readonly<VisualizeDifferencesOptions>}
  */

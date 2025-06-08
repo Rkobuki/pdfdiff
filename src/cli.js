@@ -8,7 +8,7 @@ import util from "node:util";
 import {
   isValidAlignStrategy,
   defaultOptions,
-  enumerate,
+  withIndex,
   parseHex,
   formatHex,
   visualizeDifferences,
@@ -98,7 +98,7 @@ fs.mkdirSync(outDir, { recursive: true });
 for await (const [
   i,
   { a, b, diff, addition, deletion, modification },
-] of enumerate(
+] of withIndex(
   visualizeDifferences(pdfA, pdfB, {
     dpi,
     alpha,

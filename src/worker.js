@@ -1,15 +1,13 @@
 // @ts-check
 import * as jimp from "jimp";
-/**
- * @typedef {jimp.JimpInstance} JimpInstance
- */
+/** @typedef {jimp.JimpInstance} JimpInstance */
 
-import { composeLayers, drawDifference } from "./lib.js";
-import { alignSize } from "./mupdf-util.js";
+import { drawDifference } from "./diff.js";
+import { alignSize, composeLayers } from "./image.js";
 
 addEventListener("message", async (e) => {
   const { bufA, bufB, bufMask, pallet, align } =
-    /** @type {{bufA: ArrayBuffer, bufB: ArrayBuffer, bufMask: ArrayBuffer, pallet: import("./index.js").Pallet, align: import("./mupdf-util.js").AlignStrategy}} */ (
+    /** @type {{bufA: ArrayBuffer, bufB: ArrayBuffer, bufMask: ArrayBuffer, pallet: import("./diff.js").Pallet, align: import("./image.js").AlignStrategy}} */ (
       e.data
     );
   const [a, b, mask] = alignSize(
