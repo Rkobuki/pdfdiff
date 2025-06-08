@@ -1,0 +1,43 @@
+{
+  "name": "@u1f992/pdfdiff",
+  "version": "0.1.0",
+  "description": "Visualize and quantify differences between two PDF files.",
+  "main": "dist/index.js",
+  "bin": {
+    "pdfdiff": "src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "test:cli": "node src/cli.js test/a.pdf test/b.pdf out --mask test/mask.pdf --dpi 300 && echo \"expected: Page 1, Addition: 7500, Deletion: 7500, Modification: 7500\"",
+    "build": "rollup -c",
+    "serve": "npm run build && http-server dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/u1f992/pdfdiff.git"
+  },
+  "keywords": [],
+  "author": "Koutaro Mukai",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/u1f992/pdfdiff/issues"
+  },
+  "homepage": "https://github.com/u1f992/pdfdiff",
+  "type": "module",
+  "devDependencies": {
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "http-server": "^14.1.1",
+    "nodehog": "^0.1.2",
+    "prettier": "^3.5.3",
+    "rollup": "^4.42.0",
+    "rollup-plugin-copy": "^3.5.0"
+  },
+  "dependencies": {
+    "ix": "^7.0.0",
+    "jimp": "^1.6.0",
+    "mupdf": "^1.26.2",
+    "web-worker": "^1.5.0"
+  }
+}
