@@ -57,7 +57,7 @@ export function fillWithEmpty(images) {
 }
 
 /** @type {["resize", "top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"]} */
-export const alignStrategyValues = [
+const alignStrategyValues = [
   "resize",
   "top-left",
   "top-center",
@@ -72,6 +72,13 @@ export const alignStrategyValues = [
 /**
  * @typedef {typeof alignStrategyValues[number]} AlignStrategy
  */
+
+/**
+ * @param {string} str
+ * @returns {str is AlignStrategy}
+ */
+export const isValidAlignStrategy = (str) =>
+  /** @type {string[]} */ (alignStrategyValues).includes(str);
 
 /**
  * @param {JimpInstance} img

@@ -11,7 +11,7 @@ import Worker from "web-worker";
 
 import { zipLongest, enumerate } from "./iterable-helper.js";
 import { pageToImage, fillWithEmpty, loadPages } from "./mupdf-util.js";
-import { alignStrategyValues } from "./mupdf-util.js";
+import { isValidAlignStrategy } from "./mupdf-util.js";
 /**
  * @typedef {import("./mupdf-util.js").AlignStrategy} AlignStrategy
  */
@@ -20,51 +20,60 @@ import { parseHex, formatHex } from "./color-util.js";
  * @typedef {import("./color-util.js").RGBAColor} RGBAColor
  */
 
-export { enumerate, alignStrategyValues, parseHex, formatHex };
+export { enumerate, isValidAlignStrategy, parseHex, formatHex };
 
-export const DEFAULT_DPI = 150;
-export const DEFAULT_ALPHA = true;
-export const DEFAULT_ALIGN = "resize";
 /**
- * @typedef {{ addition: Readonly<RGBAColor>; deletion: Readonly<RGBAColor>; modification: Readonly<RGBAColor>; }} Pallet
+ * @typedef {{ addition: Readonly<RGBAColor>; deletion: Readonly<RGBAColor>; modification: Readonly<RGBAColor> }} Pallet
+ * @typedef {{ dpi: number; alpha: boolean; mask?: Uint8Array; align: AlignStrategy; pallet: Partial<Readonly<Pallet>> }} VisualizeDifferencesOptions
+ * @satisfies {Readonly<VisualizeDifferencesOptions>}
  */
-/** @type {Readonly<Pallet>} */
-export const DEFAULT_PALLET = Object.freeze({
-  addition: Object.freeze(/** @type {RGBAColor} */ ([0x4c, 0xae, 0x4f, 0xff])),
-  deletion: Object.freeze(/** @type {RGBAColor} */ ([0xff, 0x57, 0x24, 0xff])),
-  modification: Object.freeze(
-    /** @type {RGBAColor} */ ([0xff, 0xc1, 0x05, 0xff]),
-  ),
+export const defaultOptions = Object.freeze({
+  dpi: 150,
+  alpha: true,
+  mask: undefined,
+  align: "resize",
+  pallet: Object.freeze({
+    addition: Object.freeze(
+      /** @type {RGBAColor} */ ([0x4c, 0xae, 0x4f, 0xff]),
+    ),
+    deletion: Object.freeze(
+      /** @type {RGBAColor} */ ([0xff, 0x57, 0x24, 0xff]),
+    ),
+    modification: Object.freeze(
+      /** @type {RGBAColor} */ ([0xff, 0xc1, 0x05, 0xff]),
+    ),
+  }),
 });
 
 /**
  * @param {Uint8Array} a
  * @param {Uint8Array} b
- * @param {Object} [options]
- * @param {number} [options.dpi]
- * @param {boolean} [options.alpha]
- * @param {Uint8Array} [options.mask]
- * @param {import("./mupdf-util.js").AlignStrategy} [options.align]
- * @param {Partial<Readonly<Pallet>>} [options.pallet]
+ * @param {Partial<VisualizeDifferencesOptions>} [options]
  * @typedef {{ a: JimpInstance, b: JimpInstance, diff: JimpInstance, addition: [number, number][], deletion: [number, number][], modification: [number, number][] }} VisualizeDifferencesResult
  * @returns {AsyncIterable<VisualizeDifferencesResult>}
  */
 export function visualizeDifferences(a, b, options) {
-  const dpi = options?.dpi ?? DEFAULT_DPI;
-  const alpha = options?.alpha ?? DEFAULT_ALPHA;
-  const align = options?.align ?? DEFAULT_ALIGN;
-  const pallet = {
-    ...DEFAULT_PALLET,
-    ...options?.pallet,
+  /** @satisfies {VisualizeDifferencesOptions} */
+  const mergedOptions = {
+    dpi: options?.dpi ?? defaultOptions.dpi,
+    alpha: options?.alpha ?? defaultOptions.alpha,
+    mask: options?.mask ?? defaultOptions.mask,
+    align: options?.align ?? defaultOptions.align,
+    pallet: {
+      addition: options?.pallet?.addition ?? defaultOptions.pallet.addition,
+      deletion: options?.pallet?.deletion ?? defaultOptions.pallet.deletion,
+      modification:
+        options?.pallet?.modification ?? defaultOptions.pallet.modification,
+    },
   };
   const pageToImageFn = (/** @type {mupdf.Page} */ page) =>
-    pageToImage(page, dpi, alpha);
+    pageToImage(page, mergedOptions.dpi, mergedOptions.alpha);
 
   const pdfA = mupdf.PDFDocument.openDocument(a, "application/pdf");
   const pdfB = mupdf.PDFDocument.openDocument(b, "application/pdf");
   const pdfMask =
-    typeof options?.mask !== "undefined"
-      ? mupdf.PDFDocument.openDocument(options.mask, "application/pdf")
+    typeof mergedOptions.mask !== "undefined"
+      ? mupdf.PDFDocument.openDocument(mergedOptions.mask, "application/pdf")
       : new mupdf.PDFDocument();
   return from(
     zipLongest(
@@ -90,11 +99,16 @@ export function visualizeDifferences(a, b, options) {
               resolve(e.data);
               worker.terminate();
             });
-            worker.postMessage({ bufA, bufB, bufMask, pallet, align }, [
-              bufA,
-              bufB,
-              bufMask,
-            ]);
+            worker.postMessage(
+              {
+                bufA,
+                bufB,
+                bufMask,
+                pallet: mergedOptions.pallet,
+                align: mergedOptions.align,
+              },
+              [bufA, bufB, bufMask],
+            );
           })
         );
       const diff = await jimp.Jimp.fromBuffer(bufDiff);
