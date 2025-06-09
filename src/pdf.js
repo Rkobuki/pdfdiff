@@ -26,9 +26,7 @@ import * as mupdf from "mupdf";
  */
 export function* loadPages(pdf) {
   for (let i = 0; i < pdf.countPages(); i++) {
-    const page = pdf.loadPage(i);
-    yield page;
-    page.destroy();
+    yield pdf.loadPage(i);
   }
 }
 
@@ -47,5 +45,6 @@ export async function pageToImage(page, dpi, alpha) {
   );
   const ret = await jimp.Jimp.fromBuffer(new Uint8Array(pixmap.asPNG()).buffer);
   pixmap.destroy();
+  page.destroy();
   return ret;
 }
