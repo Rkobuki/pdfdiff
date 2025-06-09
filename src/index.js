@@ -95,8 +95,8 @@ export function visualizeDifferences(a, b, options) {
   ).pipe(
     map(fillWithEmpty),
     flatMap(async ([a, b, mask]) => {
-      const cloneA = a.clone();
-      const cloneB = b.clone();
+      // NOTE: getBufferはcopyなので、Workerに移譲した後もa, bを使用して問題ない
+      // https://github.com/jimp-dev/jimp/blob/b6b0e418a5f1259211a133b20cddb4f4e5c25679/packages/core/src/index.ts#L444
       const bufA = new Uint8Array(await a.getBuffer(jimp.JimpMime.png)).buffer;
       const bufB = new Uint8Array(await b.getBuffer(jimp.JimpMime.png)).buffer;
       const bufMask = new Uint8Array(await mask.getBuffer(jimp.JimpMime.png))
@@ -123,7 +123,7 @@ export function visualizeDifferences(a, b, options) {
           })
         );
       const diff = await jimp.Jimp.fromBuffer(bufDiff);
-      return { a: cloneA, b: cloneB, diff, addition, deletion, modification };
+      return { a, b, diff, addition, deletion, modification };
     }, navigator.hardwareConcurrency),
   );
 }
